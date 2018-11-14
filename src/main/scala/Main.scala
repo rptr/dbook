@@ -20,7 +20,8 @@ object Main extends SimpleSwingApplication {
   val preferenceDialog  :Dialog = new Dialog() {
 
     val panel = new FlowPanel(FlowPanel.Alignment.Left)() {
-      new Label("TODO")
+      preferredSize = new Dimension(300, 300)
+      contents += new Label("TODO")
     }
 
     contents = panel
