@@ -1,10 +1,11 @@
 
 import java.awt.Point
+import java.awt.event.KeyListener
 
 import javax.swing.UIManager
 
 import scala.swing.TabbedPane.Page
-import scala.swing.event.{ButtonClicked, CaretUpdate, SelectionChanged}
+import scala.swing.event._
 import swing._
 
 class EntryListItem(entry: DiaryItem) {
@@ -103,7 +104,6 @@ object Main extends SimpleSwingApplication {
     preferredSize = dim
     maximumSize = dim
 
-
     // MAIN MENU
     menuBar = new MenuBar {
       contents += new Menu("File") {
@@ -180,6 +180,9 @@ object Main extends SimpleSwingApplication {
     setup()
   }
 
+  def keyDown (e: KeyPressed) :Unit = {
+  }
+
   def setup() :Unit = {
     setupTags()
     updateEntryList()
@@ -196,10 +199,20 @@ object Main extends SimpleSwingApplication {
       listenTo(caret)
 
       reactions += {
+        // TODO change to EditDone
         case e: CaretUpdate => {
           println("TODO text changed")
         }
       }
+
+      listenTo(keys)
+      reactions += {
+        case e: KeyEvent => {
+          println("hi")
+        }
+      }
+      focusable = true
+      requestFocus()
     }
 
     val editor = new ScrollPane (textArea)
