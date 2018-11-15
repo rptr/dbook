@@ -3,6 +3,7 @@ import java.awt.Point
 
 import javax.swing.UIManager
 
+import scala.swing.TabbedPane.Page
 import scala.swing.event.{ButtonClicked, CaretUpdate, SelectionChanged}
 import swing._
 
@@ -29,18 +30,10 @@ object Main extends SimpleSwingApplication {
   }
 
   val editorHolder  : BoxPanel = new BoxPanel(Orientation.Vertical)
-  val tabPanel      : FlowPanel = new FlowPanel()
+//  val tabPanel      : FlowPanel = new FlowPanel()
 
   // TEXT EDITOR
-  val textArea      : EditorPane = new EditorPane() {
-    listenTo(caret)
-
-    reactions += {
-      case CaretUpdate(`textArea`) => {
-        println("TODO text changed")
-      }
-    }
-  }
+  val tabBox        : TabbedPane = new TabbedPane()
 
   val statusPanel   : FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)()
   val tagsMenu      : MenuBar = new MenuBar()
@@ -169,19 +162,13 @@ object Main extends SimpleSwingApplication {
       }
     }
 
-    // TEXT EDITOR
-    var scroll = new ScrollPane(textArea) {
-      preferredSize = new Dimension(1, 600)
-    }
-
     // STATUS BAR
     statusPanel.preferredSize = new Dimension(1, 40)
     statusPanel.maximumSize = new Dimension(600, 40)
     statusPanel.contents += new Label("5000 words")
     statusPanel.contents += tagsMenu
 
-    editorHolder.contents += tabPanel
-    editorHolder.contents += scroll
+    editorHolder.contents += tabBox
     editorHolder.contents += statusPanel
 
     contents = new SplitPane(Orientation.Vertical, editorHolder,
@@ -195,6 +182,7 @@ object Main extends SimpleSwingApplication {
 
   def setup() :Unit = {
     setupTags()
+    updateEntryList()
 
     // TESTING
     addTab(new Entry())
@@ -204,17 +192,27 @@ object Main extends SimpleSwingApplication {
 
   // TABS
   def addTab(entry: Entry): Unit = {
-    tabPanel.contents += new Button("tab 1") {
-      addOnClick(this, () => println("TODO switch tab"))
+    val textArea : EditorPane = new EditorPane() {
+      listenTo(caret)
+
+      reactions += {
+        case e: CaretUpdate => {
+          println("TODO text changed")
+        }
+      }
     }
+
+    val editor = new ScrollPane (textArea)
+
+    tabBox.pages += new TabbedPane.Page("tab", editor)
   }
 
   def closeTab(index: Int): Unit = {
-    tabPanel.contents.remove(index)
+    tabBox.pages.remove(index)
   }
 
   // DIARY ENTRIES
-  def constructEntryList(): Unit = {
+  def updateEntryList(): Unit = {
     val allEntries: Seq[EntryListItem] = Seq(new EntryListItem(new Entry()))
     entryList.listData_=(allEntries)
   }
