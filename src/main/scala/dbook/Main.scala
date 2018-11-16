@@ -65,11 +65,18 @@ object Main extends SimpleSwingApplication {
 
   val entryListHolder : BoxPanel = new BoxPanel(Orientation.Vertical) {
       listenTo(entryList.selection)
+      listenTo(entryList.mouse.clicks)
 
       reactions += {
-        case SelectionChanged(`entryList`) => {
+        case MouseClicked(_, p, _, num, _) => {
           val index: Int = entryList.selection.indices.head
-          selectEntry(entryList.listData(index))
+          val entry: EntryListItem = entryList.listData(index)
+
+          if (num % 2 == 0)
+            doubleClickEntry(entry)
+          else
+            selectEntry(entry)
+
         }
       }
 
@@ -220,17 +227,22 @@ object Main extends SimpleSwingApplication {
   }
 
   def setup() :Unit = {
+    diary.loadDefault()
+
     setupTags()
     updateEntryList()
 
     // TESTING
-    addTab(new Entry())
-    addTab(new Entry())
-    addTab(new Entry())
   }
 
   // TABS
-  def addTab(entry: Entry): Unit = {
+  def openEntryInTab (entry: Entry): Unit = {
+    if (!isEntryOpened(entry)) {
+      addTab(entry)
+    }
+  }
+
+  def addTab (entry: Entry): Unit = {
     // open text area + tab for this entry
     val textArea : EditorPane = new EditorPane() {
       listenTo(caret)
@@ -249,9 +261,16 @@ object Main extends SimpleSwingApplication {
 
     tabBox.pages += new TabbedPane.Page("tab", editor)
 
-    val index = tabBox.pages.length
+    val index = tabBox.pages.length - 1
     tabIndexToEntryId.update(index, entry.id)
     entryIdToTabIndex.update(entry.id, index)
+  }
+
+  /*
+   * Check if entry is opened in a tab already.
+   */
+  def isEntryOpened (entry: Entry): Boolean = {
+    entryIdToTabIndex.get(entry.id).nonEmpty
   }
 
   def closeTab(tabIndex: Int): Unit = {
@@ -260,11 +279,15 @@ object Main extends SimpleSwingApplication {
 
       val entryId = tabIndexToEntryId.get(tabIndex)
 
-      tabIndexToEntryId.remove(tabIndex)
-
       if (entryId.nonEmpty) {
         entryIdToTabIndex.remove(entryId.get)
       }
+
+      tabIndexToEntryId.remove(tabIndex)
+
+      // can't figure out how to HashMap::map() :)
+      tabIndexToEntryId = for ((a, b) <- tabIndexToEntryId)
+        yield (a - 1, b)
     }
   }
 
@@ -274,18 +297,22 @@ object Main extends SimpleSwingApplication {
 
   // DIARY ENTRIES
   def updateEntryList(): Unit = {
-    val allEntries: Seq[EntryListItem] = Seq(new EntryListItem(new Entry()))
+    val allItems = diary.getAllItems()
+    val allEntries: Seq[EntryListItem] = for (e <- allItems) yield new EntryListItem(e)
     entryList.listData_=(allEntries)
   }
 
-  def selectEntry(item: EntryListItem): Unit = {
+  def doubleClickEntry(item: EntryListItem): Unit = {
     var index = item.entryId
     var entry = diary.getEntry(index)
 
-    if (entry.nonEmpty)
-      addTab(entry.get)
+    entry.get match {
+      case e:Entry => openEntryInTab(e)
+      case _ =>
+    }
+  }
 
-    println("select entry ")
+  def selectEntry(item: EntryListItem): Unit = {
   }
 
   // TAGS
