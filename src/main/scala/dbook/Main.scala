@@ -23,6 +23,7 @@ class EntryListItem(entry: DiaryItem) {
   */
 object Main extends SimpleSwingApplication {
   val diary :Diary = new Diary()
+  var io    :dbook.IO = new PlaintextIO()
 
   // UI
   val fileChooser   :FileChooser = new FileChooser()
@@ -227,7 +228,10 @@ object Main extends SimpleSwingApplication {
   }
 
   def setup() :Unit = {
-    diary.loadDefault()
+//    diary.loadDefault()
+    io.setFile("my_diary")
+    io.load(diary)
+    io.save(diary)
 
     setupTags()
     updateEntryList()
@@ -252,6 +256,7 @@ object Main extends SimpleSwingApplication {
       reactions += {
         case e: CaretUpdate => {
           diary.saveEntry(entry.id, text)
+          io.save(diary)
         }
       }
 
@@ -284,17 +289,9 @@ object Main extends SimpleSwingApplication {
 
       if (entryId.nonEmpty) {
         entryIdToTabIndex.remove(entryId.get)
-      } else {
-        println("error: can't remove entry "+tabIndex)
       }
 
       tabIndexToEntryId.remove(tabIndex)
-
-//      var l = for ((a, b) <- tabIndexToEntryId if a > tabIndex)
-//        yield (a - 1, b)
-
-//      l.foreach((a, b) => println(a + " " + b))
-//      tabIndexToEntryId.foreach((a, b) => tabIndexToEntryId.update(a-1, b))
 
       // yes, awful
       var i = tabIndex + 1

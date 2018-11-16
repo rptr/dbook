@@ -14,11 +14,15 @@ class Diary {
   private var _entries :List[DiaryItem] = List()
   private var _nextItemId :Int = 0
 
-  private def addItem (): Unit = {
-    println("TODO addItem")
+  def addItem (item: DiaryItem): Unit = {
+    item match {
+      case e: Entry => addEntry(e)
+      case c: Chapter => addChapter(c)
+      case _ =>
+    }
   }
 
-  private def addItem (parentItemIndex: Int): Unit = {
+  def addItem (parentItemIndex: Int): Unit = {
     println("TODO addItem")
   }
 
@@ -27,24 +31,20 @@ class Diary {
     _nextItemId
   }
 
-  def loadDefault (): Unit = {
-    addEntry()
-    addEntry()
-    addEntry()
-    addEntry()
-  }
+//  def loadDefault (): Unit = {
+//  }
 
-  def addEntry (): Unit = {
-    val time: Long = Calendar.getInstance().getTime.getTime
-    val e = new Entry(nextItemId(), "hi", time, "im empty inside")
-    _entries = e :: _entries
+  def addEntry (entry: Entry): Unit = {
+//    val time: Long = Calendar.getInstance().getTime.getTime
+//    val e = new Entry(nextItemId(), "hi", time, "im empty inside")
+    _entries = entry :: _entries
   }
 
   def addEntry (parentChapterIndex: Int): Unit = {
     println("TODO add new entry")
   }
 
-  def addChapter (): Unit = {
+  def addChapter (chapter: Chapter): Unit = {
     println("TODO append new chapter")
   }
 
