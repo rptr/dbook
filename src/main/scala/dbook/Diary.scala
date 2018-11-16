@@ -34,4 +34,11 @@ class Diary {
   def addChapter (parentChapterIndex: Int): Unit = {
     println("TODO add new chapter")
   }
+
+  def getEntry (id: Int): Option[Entry] = {
+    _entries find (e => e.id == id) match {
+      case e: Option[Entry] => e
+      case _ => Option.empty
+    }
+  }
 }

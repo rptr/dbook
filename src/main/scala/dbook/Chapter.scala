@@ -3,7 +3,7 @@
  */
 package dbook
 
-class Chapter extends DiaryItem {
+case class Chapter() extends DiaryItem {
   private var _children :List[DiaryItem] = List()
 
   def children: List[DiaryItem] = _children

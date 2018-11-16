@@ -3,7 +3,7 @@
  */
 package dbook
 
-class Entry extends DiaryItem {
+case class Entry() extends DiaryItem {
   private var _timeEdited: Int = 0
   private var _body: String = ""
 

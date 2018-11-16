@@ -6,6 +6,7 @@ import java.awt.event.KeyListener
 
 import javax.swing.UIManager
 
+import scala.collection.mutable
 import scala.swing._
 import scala.swing.event._
 
@@ -40,6 +41,8 @@ object Main extends SimpleSwingApplication {
 //  val tabPanel      : FlowPanel = new FlowPanel()
 
   // TEXT EDITOR
+  var tabIndexToEntryId : mutable.HashMap[Int, Int] = new mutable.HashMap[Int, Int]()
+  var entryIdToTabIndex : mutable.HashMap[Int, Int] = new mutable.HashMap[Int, Int]()
   val tabBox        : TabbedPane = new TabbedPane()
 
   val statusPanel   : FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)()
@@ -212,7 +215,7 @@ object Main extends SimpleSwingApplication {
     e.key match {
       case Config.keyCloseTab => closeCurrentTab()
 //      case Key.Escape => println("scape")
-      case _ => ???
+      case _ => () => {}
     }
   }
 
@@ -245,11 +248,23 @@ object Main extends SimpleSwingApplication {
     val editor = new ScrollPane (textArea)
 
     tabBox.pages += new TabbedPane.Page("tab", editor)
+
+    val index = tabBox.pages.length
+    tabIndexToEntryId.update(index, entry.id)
+    entryIdToTabIndex.update(entry.id, index)
   }
 
-  def closeTab(index: Int): Unit = {
-    if (tabBox.pages.length > index && index >= 0) {
-      tabBox.pages.remove(index)
+  def closeTab(tabIndex: Int): Unit = {
+    if (tabBox.pages.length > tabIndex && tabIndex >= 0) {
+      tabBox.pages.remove(tabIndex)
+
+      val entryId = tabIndexToEntryId.get(tabIndex)
+
+      tabIndexToEntryId.remove(tabIndex)
+
+      if (entryId.nonEmpty) {
+        entryIdToTabIndex.remove(entryId.get)
+      }
     }
   }
 
@@ -265,7 +280,12 @@ object Main extends SimpleSwingApplication {
 
   def selectEntry(item: EntryListItem): Unit = {
     var index = item.entryId
-//    diary.getEntry(index)
+    var entry = diary.getEntry(index)
+
+    if (entry.nonEmpty)
+      addTab(entry.get)
+
+    println("select entry ")
   }
 
   // TAGS
