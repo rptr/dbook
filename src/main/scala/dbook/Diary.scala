@@ -1,5 +1,7 @@
+package dbook
+
 /*
- * Diary is a collection of Entries and Chapters
+ * dbook.Diary is a collection of Entries and Chapters
  */
 
 class Diary {

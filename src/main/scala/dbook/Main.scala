@@ -1,18 +1,18 @@
 package dbook
 
+import java.awt
 import java.awt.Point
 import java.awt.event.KeyListener
 
 import javax.swing.UIManager
 
-import scala.swing.TabbedPane.Page
+import scala.swing._
 import scala.swing.event._
-import swing._
-
-import dbook.Config
 
 class EntryListItem(entry: DiaryItem) {
-  var _entryId: Int = entry.id
+  private var _entryId: Int = entry.id
+
+  def entryId: Int = _entryId
 
   override def toString: String = "2018: " + "dear diary"
 }
@@ -21,7 +21,10 @@ class EntryListItem(entry: DiaryItem) {
   * A simple swing demo.
   */
 object Main extends SimpleSwingApplication {
-  val fileChooser   : FileChooser = new FileChooser()
+  val diary :Diary = new Diary()
+
+  // UI
+  val fileChooser   :FileChooser = new FileChooser()
   val preferenceDialog  :Dialog = new Dialog() {
 
     val panel = new FlowPanel(FlowPanel.Alignment.Left)() {
@@ -43,8 +46,18 @@ object Main extends SimpleSwingApplication {
   val tagsMenu      : MenuBar = new MenuBar()
 
   // ENTRY LIST
+//  val entryDialog   : Dialog = new Dialog() {
+//    contents = new FlowPanel(FlowPanel.Alignment.Left) {
+//      contents += new Button("Edit") {
+//        addOnClick(this, () => println("TODO edit entry"))
+//      }
+//
+//      contents += new Button("Edit") {
+//        addOnClick(this, () => println("TODO edit entry"))
+//      }
+//    }
+//  }
   val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]() {
-    listenToKeys(this)
   }
 
   val entryListHolder : BoxPanel = new BoxPanel(Orientation.Vertical) {
@@ -53,7 +66,7 @@ object Main extends SimpleSwingApplication {
       reactions += {
         case SelectionChanged(`entryList`) => {
           val index: Int = entryList.selection.indices.head
-          println("TODO click entry " + entryList.listData(index))
+          selectEntry(entryList.listData(index))
         }
       }
 
@@ -90,14 +103,16 @@ object Main extends SimpleSwingApplication {
   }
 
   // UI SETUP METHODS
-  def addOnClick(item: Component, cb: () => Any) = {
+  def addOnClick(item: Component, cb: () => Any) :Unit = {
     item.reactions += {
       case e: ButtonClicked => cb()
     }
   }
 
   def listenToKeys (c: Component) :Unit = {
-    listenTo(c.keys)
+    c.focusable = true
+    c.requestFocus()
+    c.listenTo(c.keys)
 
     c.reactions += {
       case e: KeyPressed => keyDown(e)
@@ -196,6 +211,8 @@ object Main extends SimpleSwingApplication {
   def keyDown (e: KeyPressed) :Unit = {
     e.key match {
       case Config.keyCloseTab => closeCurrentTab()
+//      case Key.Escape => println("scape")
+      case _ => ???
     }
   }
 
@@ -211,6 +228,7 @@ object Main extends SimpleSwingApplication {
 
   // TABS
   def addTab(entry: Entry): Unit = {
+    // open text area + tab for this entry
     val textArea : EditorPane = new EditorPane() {
       listenTo(caret)
 
@@ -230,17 +248,24 @@ object Main extends SimpleSwingApplication {
   }
 
   def closeTab(index: Int): Unit = {
-    tabBox.pages.remove(index)
+    if (tabBox.pages.length > index && index >= 0) {
+      tabBox.pages.remove(index)
+    }
   }
 
   def closeCurrentTab(): Unit = {
-    closeTab(tabBox.pages.indexOf(tabBox.selection))
+    closeTab(tabBox.pages.indexOf(tabBox.selection.page))
   }
 
   // DIARY ENTRIES
   def updateEntryList(): Unit = {
     val allEntries: Seq[EntryListItem] = Seq(new EntryListItem(new Entry()))
     entryList.listData_=(allEntries)
+  }
+
+  def selectEntry(item: EntryListItem): Unit = {
+    var index = item.entryId
+//    diary.getEntry(index)
   }
 
   // TAGS
