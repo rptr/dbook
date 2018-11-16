@@ -1,10 +1,15 @@
 package dbook
 
-trait DiaryItem {
+abstract trait DiaryItem {
   protected var _id: Int = 0
   protected var _title: String = ""
   protected var _timeCreated: Long = 0
   protected var _tags: List[String] = List()
+
+  // NOTE i saw this in some example code, but why do this instead of just
+  //      having one class with isChapter/isEntry
+  def isChapter: Boolean
+  def isEntry: Boolean
 
   def id: Int = _id
   def title: String = _title

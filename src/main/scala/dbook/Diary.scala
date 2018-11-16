@@ -36,7 +36,7 @@ class Diary {
 
   def addEntry (): Unit = {
     val time: Long = Calendar.getInstance().getTime.getTime
-    val e = new Entry(nextItemId(), "hi", time)
+    val e = new Entry(nextItemId(), "hi", time, "im empty inside")
     _entries = e :: _entries
   }
 
@@ -56,5 +56,14 @@ class Diary {
     _entries find (e => e.id == id)
   }
 
-  def getAllItems (): List[DiaryItem] = _entries
+  def saveEntry (entryId: Int, text: String): Unit = {
+    var i = getEntry(entryId)
+
+    if (i.nonEmpty && i.get.isEntry) {
+      _entries = _entries.updated(_entries.indexWhere(e => e.id == entryId),
+        new Entry(i.get.id, i.get.title, i.get.timeCreated, text))
+    }
+  }
+
+  def getAllItems(): List[DiaryItem] = _entries
 }

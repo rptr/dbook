@@ -239,6 +239,8 @@ object Main extends SimpleSwingApplication {
   def openEntryInTab (entry: Entry): Unit = {
     if (!isEntryOpened(entry)) {
       addTab(entry)
+    } else {
+      println("entry opened already")
     }
   }
 
@@ -248,11 +250,12 @@ object Main extends SimpleSwingApplication {
       listenTo(caret)
 
       reactions += {
-        // TODO change to EditDone
         case e: CaretUpdate => {
-          println("TODO text changed")
+          diary.saveEntry(entry.id, text)
         }
       }
+
+      text = entry.body
 
       listenToKeys(this)
     }
@@ -281,13 +284,26 @@ object Main extends SimpleSwingApplication {
 
       if (entryId.nonEmpty) {
         entryIdToTabIndex.remove(entryId.get)
+      } else {
+        println("error: can't remove entry "+tabIndex)
       }
 
       tabIndexToEntryId.remove(tabIndex)
 
-      // can't figure out how to HashMap::map() :)
-      tabIndexToEntryId = for ((a, b) <- tabIndexToEntryId)
-        yield (a - 1, b)
+//      var l = for ((a, b) <- tabIndexToEntryId if a > tabIndex)
+//        yield (a - 1, b)
+
+//      l.foreach((a, b) => println(a + " " + b))
+//      tabIndexToEntryId.foreach((a, b) => tabIndexToEntryId.update(a-1, b))
+
+      // yes, awful
+      var i = tabIndex + 1
+      while (i < tabIndexToEntryId.size) {
+        tabIndexToEntryId.update(i - 1, tabIndexToEntryId(i))
+        i += 1
+      }
+
+          tabIndexToEntryId.foreach(e => println(e))
     }
   }
 
@@ -303,12 +319,12 @@ object Main extends SimpleSwingApplication {
   }
 
   def doubleClickEntry(item: EntryListItem): Unit = {
-    var index = item.entryId
-    var entry = diary.getEntry(index)
+    var id = item.entryId
+    var entry = diary.getEntry(id)
 
-    entry.get match {
-      case e:Entry => openEntryInTab(e)
-      case _ =>
+    entry match {
+      case Some(e:Entry) => openEntryInTab(e)
+      case _ => println("error: no such entry")
     }
   }
 

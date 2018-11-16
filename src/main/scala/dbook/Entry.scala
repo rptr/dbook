@@ -15,6 +15,18 @@ case class Entry() extends DiaryItem {
     _timeCreated = time
   }
 
+  def this (id: Int, title: String, time: Long, body: String) {
+    this()
+
+    _id = id
+    _title = title
+    _timeCreated = time
+    _body = body
+  }
+
+  def isEntry: Boolean = true
+  def isChapter: Boolean = false
+
   def timeEdited: Int = _timeEdited
   def body: String = _body
 
