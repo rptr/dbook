@@ -1,6 +1,7 @@
 /*
  * An Entry is one "page" of the diary
  */
+package dbook
 
 class Entry extends DiaryItem {
   private var _timeEdited: Int = 0

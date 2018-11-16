@@ -1,3 +1,4 @@
+package dbook
 
 import java.awt.Point
 import java.awt.event.KeyListener
@@ -7,6 +8,8 @@ import javax.swing.UIManager
 import scala.swing.TabbedPane.Page
 import scala.swing.event._
 import swing._
+
+import dbook.Config
 
 class EntryListItem(entry: DiaryItem) {
   var _entryId: Int = entry.id
@@ -40,7 +43,9 @@ object Main extends SimpleSwingApplication {
   val tagsMenu      : MenuBar = new MenuBar()
 
   // ENTRY LIST
-  val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]() {}
+  val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]() {
+    listenToKeys(this)
+  }
 
   val entryListHolder : BoxPanel = new BoxPanel(Orientation.Vertical) {
       listenTo(entryList.selection)
@@ -84,10 +89,18 @@ object Main extends SimpleSwingApplication {
       contents += listHolder
   }
 
-    // setup main UI
+  // UI SETUP METHODS
   def addOnClick(item: Component, cb: () => Any) = {
     item.reactions += {
       case e: ButtonClicked => cb()
+    }
+  }
+
+  def listenToKeys (c: Component) :Unit = {
+    listenTo(c.keys)
+
+    c.reactions += {
+      case e: KeyPressed => keyDown(e)
     }
   }
 
@@ -181,6 +194,9 @@ object Main extends SimpleSwingApplication {
   }
 
   def keyDown (e: KeyPressed) :Unit = {
+    e.key match {
+      case Config.keyCloseTab => closeCurrentTab()
+    }
   }
 
   def setup() :Unit = {
@@ -205,14 +221,7 @@ object Main extends SimpleSwingApplication {
         }
       }
 
-      listenTo(keys)
-      reactions += {
-        case e: KeyEvent => {
-          println("hi")
-        }
-      }
-      focusable = true
-      requestFocus()
+      listenToKeys(this)
     }
 
     val editor = new ScrollPane (textArea)
@@ -222,6 +231,10 @@ object Main extends SimpleSwingApplication {
 
   def closeTab(index: Int): Unit = {
     tabBox.pages.remove(index)
+  }
+
+  def closeCurrentTab(): Unit = {
+    closeTab(tabBox.pages.indexOf(tabBox.selection))
   }
 
   // DIARY ENTRIES
@@ -239,4 +252,6 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
+
+
 }
