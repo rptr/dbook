@@ -32,7 +32,12 @@ class Diary {
   }
 
   def addEntry (entry: Entry): Unit = {
+    if (entry.id < _nextItemId) {
+      entry.id = _nextItemId
+    }
+
     _entries = entry :: _entries
+    _nextItemId = entry.id + 1
   }
 
   def newEntry (): Unit = {

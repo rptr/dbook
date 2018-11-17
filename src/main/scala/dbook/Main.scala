@@ -7,6 +7,7 @@ import java.awt.event.KeyListener
 import javax.swing.UIManager
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.swing._
 import scala.swing.event._
 
@@ -42,7 +43,7 @@ object Main extends SimpleSwingApplication {
 //  val tabPanel      : FlowPanel = new FlowPanel()
 
   // TEXT EDITOR
-  var tabIndexToEntryId : mutable.HashMap[Int, Int] = new mutable.HashMap[Int, Int]()
+  var tabIndexToEntryId : ListBuffer[Int] = ListBuffer[Int]()
   var entryIdToTabIndex : mutable.HashMap[Int, Int] = new mutable.HashMap[Int, Int]()
   val tabBox        : TabbedPane = new TabbedPane()
 
@@ -224,7 +225,9 @@ object Main extends SimpleSwingApplication {
   def keyDown (e: KeyPressed) :Unit = {
     e.key match {
       case Config.keyCloseTab => closeCurrentTab()
-//      case Key.Escape => println("scape")
+      case Key.Tab => {}
+//        else if (e.modifiers == Key.Modifier.Shift)
+//          switchTab(-1)
       case _ => () => {}
     }
   }
@@ -265,6 +268,7 @@ object Main extends SimpleSwingApplication {
       text = entry.body
 
       listenToKeys(this)
+      this.peer.setFocusTraversalKeysEnabled(false)
     }
 
     val editor = new ScrollPane (textArea)
@@ -272,8 +276,10 @@ object Main extends SimpleSwingApplication {
     tabBox.pages += new TabbedPane.Page("tab", editor)
 
     val index = tabBox.pages.length - 1
-    tabIndexToEntryId.update(index, entry.id)
+    tabIndexToEntryId.insert(index, entry.id)
     entryIdToTabIndex.update(entry.id, index)
+
+    tabBox.peer.setSelectedIndex(index)
   }
 
   /*
@@ -285,29 +291,24 @@ object Main extends SimpleSwingApplication {
 
   def closeTab(tabIndex: Int): Unit = {
     if (tabBox.pages.length > tabIndex && tabIndex >= 0) {
+      val entryId = tabIndexToEntryId(tabIndex)
+
+      entryIdToTabIndex.remove(entryId)
+      tabIndexToEntryId.remove(tabIndex)
       tabBox.pages.remove(tabIndex)
 
-      val entryId = tabIndexToEntryId.get(tabIndex)
-
-      if (entryId.nonEmpty) {
-        entryIdToTabIndex.remove(entryId.get)
-      }
-
-      tabIndexToEntryId.remove(tabIndex)
-
-      // yes, awful
-      var i = tabIndex + 1
-      while (i < tabIndexToEntryId.size) {
-        tabIndexToEntryId.update(i - 1, tabIndexToEntryId(i))
-        i += 1
-      }
-
-          tabIndexToEntryId.foreach(e => println(e))
+      println("remove tab "+tabIndex)
     }
   }
 
   def closeCurrentTab(): Unit = {
     closeTab(tabBox.pages.indexOf(tabBox.selection.page))
+  }
+
+  def switchTab (dir: Int): Unit = {
+    println("switch tab")
+    tabBox.peer.setSelectedIndex(tabBox.peer.getSelectedIndex %
+      tabBox.peer.getTabCount)
   }
 
   // DIARY ENTRIES

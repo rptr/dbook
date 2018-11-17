@@ -29,9 +29,17 @@ case class Entry() extends DiaryItem {
 
   def timeEdited: Int = _timeEdited
   def body: String = _body
-  override def title: String =
-    if (_body.nonEmpty)  _body.split("\n")(0)
-      else "empty entry"
+  override def title: String = {
+    var title = "[no title]"
+
+    if (_body.nonEmpty) {
+      val parts = _body.split("\n")
+
+      if (parts.nonEmpty && !parts(0).isEmpty) title = parts(0)
+    }
+
+    title
+  }
 
   def body_=(s: String): Unit = _body = s
 
