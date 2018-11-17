@@ -2,6 +2,8 @@ package dbook
 
 import java.util.Calendar
 
+import scala.collection.mutable.ListBuffer
+
 /*
  * dbook.Diary is a collection of Entries and Chapters
  */
@@ -11,9 +13,12 @@ class Diary {
 
   private var _title :String = ""
   private var _fileName :String = ""
-  private var _entries :List[DiaryItem] = List()
+  private var _entries :ListBuffer[DiaryItem] = ListBuffer()
   private var _nextItemId :Int = 0
 
+  /*
+   * DiaryItem
+   */
   def addItem (item: DiaryItem): Unit = {
     item match {
       case e: Entry => addEntry(e)
@@ -31,12 +36,15 @@ class Diary {
     _nextItemId
   }
 
+  /*
+   * Entry
+   */
   def addEntry (entry: Entry): Unit = {
     if (entry.id < _nextItemId) {
       entry.id = _nextItemId
     }
 
-    _entries = entry :: _entries
+    _entries.append(entry)
     _nextItemId = entry.id + 1
   }
 
@@ -53,14 +61,6 @@ class Diary {
     println("TODO add new entry")
   }
 
-  def addChapter (chapter: Chapter): Unit = {
-    println("TODO append new chapter")
-  }
-
-  def addChapter (parentChapterIndex: Int): Unit = {
-    println("TODO add new chapter")
-  }
-
   def getEntry (id: Int): Option[DiaryItem] = {
     _entries find (e => e.id == id)
   }
@@ -69,14 +69,30 @@ class Diary {
     var i = getEntry(entryId)
 
     if (i.nonEmpty && i.get.isEntry) {
-      _entries = _entries.updated(_entries.indexWhere(e => e.id == entryId),
-        new Entry(i.get.id, i.get.title, i.get.timeCreated, text))
+      _entries.update(_entries.indexWhere(e => e.id == entryId),
+        new Entry(i.get.id, "", i.get.timeCreated, text))
     }
+  }
+
+  def tagEntry (entryId: Int, tag: String): Unit = {
+    _entries(_entries.indexWhere(e => e.id == entryId)).addTag(tag)
+  }
+
+  /*
+   * Chapter
+   */
+
+  def addChapter (chapter: Chapter): Unit = {
+    println("TODO append new chapter")
+  }
+
+  def addChapter (parentChapterIndex: Int): Unit = {
+    println("TODO add new chapter")
   }
 
   def saveAll (): Unit = {
 
   }
 
-  def getAllItems: List[DiaryItem] = _entries
+  def getAllItems: ListBuffer[DiaryItem] = _entries
 }

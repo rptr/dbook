@@ -3,6 +3,8 @@ package dbook
 import java.awt
 import java.awt.Point
 import java.awt.event.KeyListener
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import javax.swing.UIManager
 
@@ -16,7 +18,9 @@ class EntryListItem(entry: DiaryItem) {
 
   def entryId: Int = _entryId
 
-  override def toString: String = entry.title
+  override def toString: String =
+    new SimpleDateFormat("yyyy-MM-dd: ").
+      format(entry.timeCreated) + entry.title
 }
 
 /**
@@ -44,7 +48,8 @@ object Main extends SimpleSwingApplication {
 
   // TEXT EDITOR
   var tabIndexToEntryId : ListBuffer[Int] = ListBuffer[Int]()
-  var entryIdToTabIndex : mutable.HashMap[Int, Int] = new mutable.HashMap[Int, Int]()
+  var entryIdToTabIndex : mutable.HashMap[Int, Int] =
+    new mutable.HashMap[Int, Int]()
   val tabBox        : TabbedPane = new TabbedPane()
 
   val statusPanel   : FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)()
@@ -62,8 +67,7 @@ object Main extends SimpleSwingApplication {
 //      }
 //    }
 //  }
-  val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]() {
-  }
+  val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]()
 
   val entryListHolder : BoxPanel = new BoxPanel(Orientation.Vertical) {
       listenTo(entryList.selection)
@@ -209,13 +213,24 @@ object Main extends SimpleSwingApplication {
     statusPanel.maximumSize = new Dimension(600, 40)
     statusPanel.contents += new Label("5000 words")
     statusPanel.contents += tagsMenu
+    statusPanel.contents += new Label("Add tag:")
+    statusPanel.contents += new TextField() {
+      preferredSize = new Dimension(200, 20)
+      listenTo(keys)
+
+      reactions += {
+        case e: KeyPressed =>
+          if (e.key == Key.Enter) {
+            tagCurrentEntry(text)
+          }
+      }
+    }
 
     editorHolder.contents += tabBox
     editorHolder.contents += statusPanel
 
     contents = new SplitPane(Orientation.Vertical, editorHolder,
-                             entryListHolder)
-    {
+                             entryListHolder) {
       dividerLocation = 420
     }
 
@@ -225,9 +240,6 @@ object Main extends SimpleSwingApplication {
   def keyDown (e: KeyPressed) :Unit = {
     e.key match {
       case Config.keyCloseTab => closeCurrentTab()
-      case Key.Tab => {}
-//        else if (e.modifiers == Key.Modifier.Shift)
-//          switchTab(-1)
       case _ => () => {}
     }
   }
@@ -302,11 +314,14 @@ object Main extends SimpleSwingApplication {
   }
 
   def closeCurrentTab(): Unit = {
-    closeTab(tabBox.pages.indexOf(tabBox.selection.page))
+    closeTab(currentTabIndex)
+  }
+
+  def currentTabIndex: Int = {
+    tabBox.pages.indexOf(tabBox.selection.page)
   }
 
   def switchTab (dir: Int): Unit = {
-    println("switch tab")
     tabBox.peer.setSelectedIndex(tabBox.peer.getSelectedIndex %
       tabBox.peer.getTabCount)
   }
@@ -346,6 +361,12 @@ object Main extends SimpleSwingApplication {
 
   def deleteCurrentEntry(): Unit = {
     diary.deleteEntry()
+  }
+
+  def tagCurrentEntry (tag: String): Unit = {
+    val entryId = tabIndexToEntryId(currentTabIndex)
+
+    diary.tagEntry(entryId, tag)
   }
 
   def createNewChapter(): Unit = {

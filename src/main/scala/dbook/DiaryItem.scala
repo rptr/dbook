@@ -20,6 +20,7 @@ abstract trait DiaryItem {
   def title_=(title: String): Unit = _title = title
   def timeCreated_=(time: Long): Unit = _title = title
 
-  def hasTag(tag: String) :Boolean = false
+  def hasTag (tag: String) :Boolean = _tags.contains(tag)
+  def addTag (tag: String) :Unit = _tags = tag :: _tags
 }
 
