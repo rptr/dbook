@@ -15,7 +15,7 @@ class EntryListItem(entry: DiaryItem) {
 
   def entryId: Int = _entryId
 
-  override def toString: String = "2018: " + "dear diary"
+  override def toString: String = entry.title
 }
 
 /**
@@ -76,7 +76,7 @@ object Main extends SimpleSwingApplication {
           if (num % 2 == 0)
             doubleClickEntry(entry)
           else
-            selectEntry(entry)
+            clickEntry(entry)
 
         }
       }
@@ -168,26 +168,28 @@ object Main extends SimpleSwingApplication {
         }
 
         contents += new MenuItem("Exit") {
-          addOnClick(this, () => println("TODO exit"))
+          addOnClick(this, () => {
+            diary.saveAll()
+            quit()})
         }
       }
 
       contents += new Menu("Entry") {
         contents += new MenuItem("New") {
-          addOnClick(this, () => println("TODO new entry"))
+          addOnClick(this, () => createNewEntry())
         }
 
         contents += new MenuItem("Delete") {
-          addOnClick(this, () => println("TODO delete entry"))
+          addOnClick(this, () => deleteCurrentEntry())
         }
       }
 
       contents += new Menu("Folder") {
         contents += new MenuItem("New") {
-          addOnClick(this, () => println("TODO new folder"))
+          addOnClick(this, () => createNewChapter())
         }
         contents += new MenuItem("Delete") {
-          addOnClick(this, () => println("TODO delte folder"))
+          addOnClick(this, () => println("TODO delete folder"))
         }
       }
 
@@ -228,7 +230,6 @@ object Main extends SimpleSwingApplication {
   }
 
   def setup() :Unit = {
-//    diary.loadDefault()
     io.setFile("my_diary")
     io.load(diary)
     io.save(diary)
@@ -257,6 +258,7 @@ object Main extends SimpleSwingApplication {
         case e: CaretUpdate => {
           diary.saveEntry(entry.id, text)
           io.save(diary)
+          updateEntryListItem(entry.id)
         }
       }
 
@@ -310,12 +312,16 @@ object Main extends SimpleSwingApplication {
 
   // DIARY ENTRIES
   def updateEntryList(): Unit = {
-    val allItems = diary.getAllItems()
+    val allItems = diary.getAllItems
     val allEntries: Seq[EntryListItem] = for (e <- allItems) yield new EntryListItem(e)
     entryList.listData_=(allEntries)
   }
 
-  def doubleClickEntry(item: EntryListItem): Unit = {
+  def updateEntryListItem(entryId: Int): Unit = {
+    updateEntryList()
+  }
+
+  def openEntry (item: EntryListItem): Unit = {
     var id = item.entryId
     var entry = diary.getEntry(id)
 
@@ -325,7 +331,24 @@ object Main extends SimpleSwingApplication {
     }
   }
 
-  def selectEntry(item: EntryListItem): Unit = {
+  def doubleClickEntry(item: EntryListItem): Unit = {
+  }
+
+  def clickEntry(item: EntryListItem): Unit = {
+    openEntry(item)
+  }
+
+  def createNewEntry (): Unit = {
+    diary.newEntry()
+    updateEntryList()
+  }
+
+  def deleteCurrentEntry(): Unit = {
+    diary.deleteEntry()
+  }
+
+  def createNewChapter(): Unit = {
+    println("todo new chap")
   }
 
   // TAGS

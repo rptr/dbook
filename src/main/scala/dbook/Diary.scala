@@ -31,13 +31,17 @@ class Diary {
     _nextItemId
   }
 
-//  def loadDefault (): Unit = {
-//  }
-
   def addEntry (entry: Entry): Unit = {
-//    val time: Long = Calendar.getInstance().getTime.getTime
-//    val e = new Entry(nextItemId(), "hi", time, "im empty inside")
     _entries = entry :: _entries
+  }
+
+  def newEntry (): Unit = {
+    val time: Long = Calendar.getInstance().getTime.getTime
+    addEntry (new Entry(nextItemId(), "", time, ""))
+  }
+
+  def deleteEntry (): Unit = {
+
   }
 
   def addEntry (parentChapterIndex: Int): Unit = {
@@ -65,5 +69,9 @@ class Diary {
     }
   }
 
-  def getAllItems(): List[DiaryItem] = _entries
+  def saveAll (): Unit = {
+
+  }
+
+  def getAllItems: List[DiaryItem] = _entries
 }

@@ -29,6 +29,11 @@ case class Entry() extends DiaryItem {
 
   def timeEdited: Int = _timeEdited
   def body: String = _body
+  override def title: String =
+    if (_body.nonEmpty)  _body.split("\n")(0)
+      else "empty entry"
+
+  def body_=(s: String): Unit = _body = s
 
   def wordCount: Int = 0
 }
