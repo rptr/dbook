@@ -1,6 +1,6 @@
 package dbook
 
-abstract trait DiaryItem {
+trait DiaryItem {
   protected var _id: Int = 0
   protected var _title: String = ""
   protected var _timeCreated: Long = 0

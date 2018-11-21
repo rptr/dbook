@@ -6,12 +6,14 @@ import java.awt.event.KeyListener
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import javax.swing.UIManager
+import javax.swing.{SwingUtilities, UIManager}
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.swing._
 import scala.swing.event._
+
+import com.github.rjeschke.txtmark
 
 class EntryListItem(entry: DiaryItem) {
   private var _entryId: Int = entry.id
@@ -22,6 +24,12 @@ class EntryListItem(entry: DiaryItem) {
     new SimpleDateFormat("yyyy-MM-dd: ").
       format(entry.timeCreated) + entry.title
 }
+
+object EditMode extends Enumeration {
+  type EditMode = Value
+  val Text, Markup = Value
+}
+import EditMode._
 
 /**
   * A simple swing demo.
@@ -48,25 +56,28 @@ object Main extends SimpleSwingApplication {
 
   // TEXT EDITOR
   var tabIndexToEntryId : ListBuffer[Int] = ListBuffer[Int]()
+  var tabEditMode       : ArrayBuffer[EditMode] = ArrayBuffer[EditMode]()
   var entryIdToTabIndex : mutable.HashMap[Int, Int] =
     new mutable.HashMap[Int, Int]()
   val tabBox        : TabbedPane = new TabbedPane()
 
   val statusPanel   : FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)()
   val tagsMenu      : MenuBar = new MenuBar()
+  val dateLabel    : Label = new Label("")
 
   // ENTRY LIST
-//  val entryDialog   : Dialog = new Dialog() {
-//    contents = new FlowPanel(FlowPanel.Alignment.Left) {
-//      contents += new Button("Edit") {
-//        addOnClick(this, () => println("TODO edit entry"))
-//      }
-//
-//      contents += new Button("Edit") {
-//        addOnClick(this, () => println("TODO edit entry"))
-//      }
-//    }
-//  }
+  val entryRightClickDialog   : Dialog = new Dialog() {
+    contents = new FlowPanel(FlowPanel.Alignment.Left)() {
+      contents += new Button("Open") {
+        addOnClick(this, () => println("TODO edit entry"))
+      }
+
+      contents += new Button("Delete") {
+        addOnClick(this, () => println("TODO edit entry"))
+      }
+    }
+  }
+
   val entryList     : ListView[EntryListItem] = new ListView[EntryListItem]()
 
   val entryListHolder : BoxPanel = new BoxPanel(Orientation.Vertical) {
@@ -74,16 +85,22 @@ object Main extends SimpleSwingApplication {
       listenTo(entryList.mouse.clicks)
 
       reactions += {
-        case MouseClicked(_, p, _, num, _) => {
-          val index: Int = entryList.selection.indices.head
-          val entry: EntryListItem = entryList.listData(index)
+        case e @ MouseClicked(_, p, _, num, _) =>
+          val index = entryList.peer.locationToIndex(p)
 
-          if (num % 2 == 0)
-            doubleClickEntry(entry)
-          else
-            clickEntry(entry)
+          if (index >= 0) {
+            entryList.peer.setSelectedIndex(index)
 
-        }
+            val entry: EntryListItem = entryList.listData(index)
+            val rmb = SwingUtilities.isRightMouseButton(e.peer)
+
+//            if (rmb)
+//              rightClickEntry(entry, p)
+            if (num % 2 == 0)
+              doubleClickEntry(entry)
+            else
+              clickEntry(entry)
+          }
       }
 
       val listHolder = new ScrollPane(entryList) {
@@ -127,7 +144,7 @@ object Main extends SimpleSwingApplication {
 
   def listenToKeys (c: Component) :Unit = {
     c.focusable = true
-    c.requestFocus()
+//    c.requestFocus()
     c.listenTo(c.keys)
 
     c.reactions += {
@@ -135,14 +152,14 @@ object Main extends SimpleSwingApplication {
     }
   }
 
-  def top = new MainFrame {
+  def top: MainFrame = new MainFrame {
     // setup window
     this.centerOnScreen()
     this.location_=(new Point(this.location.x, 0))
 
     UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel")
 
-    title = "lomkal 0.0.1"
+    title = "dbook 0.0.1"
 
     val dim = new Dimension(600, 600)
     preferredSize = dim
@@ -215,7 +232,7 @@ object Main extends SimpleSwingApplication {
     statusPanel.contents += tagsMenu
     statusPanel.contents += new Label("Add tag:")
     statusPanel.contents += new TextField() {
-      preferredSize = new Dimension(200, 20)
+      preferredSize = new Dimension(80, 20)
       listenTo(keys)
 
       reactions += {
@@ -240,6 +257,8 @@ object Main extends SimpleSwingApplication {
   def keyDown (e: KeyPressed) :Unit = {
     e.key match {
       case Config.keyCloseTab => closeCurrentTab()
+      case Key.E => if (e.modifiers == Key.Modifier.Control)
+        toggleTabEditMode(currentTabIndex)
       case _ => () => {}
     }
   }
@@ -260,22 +279,17 @@ object Main extends SimpleSwingApplication {
     if (!isEntryOpened(entry)) {
       addTab(entry)
     } else {
-      println("entry opened already")
+      val index = entryIdToTabIndex(entry.id)
+      tabBox.peer.setSelectedIndex(index)
     }
   }
 
   def addTab (entry: Entry): Unit = {
     // open text area + tab for this entry
     val textArea : EditorPane = new EditorPane() {
-      listenTo(caret)
+      listenTo(this.keys)
 
-      reactions += {
-        case e: CaretUpdate => {
-          diary.saveEntry(entry.id, text)
-          io.save(diary)
-          updateEntryListItem(entry.id)
-        }
-      }
+      peer.setContentType("text/plain")
 
       text = entry.body
 
@@ -292,6 +306,19 @@ object Main extends SimpleSwingApplication {
     entryIdToTabIndex.update(entry.id, index)
 
     tabBox.peer.setSelectedIndex(index)
+    setTabEditMode(index, EditMode.Text)
+
+    textArea.reactions += {
+      case e: KeyPressed =>
+        val mode = tabEditMode(index)
+
+        // save only the markup code
+        if (mode == EditMode.Markup) {
+          diary.saveEntry(entry.id, textArea.text)
+          io.save(diary)
+          updateEntryListItem(entry.id)
+        }
+    }
   }
 
   /*
@@ -299,6 +326,35 @@ object Main extends SimpleSwingApplication {
    */
   def isEntryOpened (entry: Entry): Boolean = {
     entryIdToTabIndex.get(entry.id).nonEmpty
+  }
+
+  def toggleTabEditMode (index: Int): Unit = {
+    val mode = tabEditMode(index)
+
+    if (mode == EditMode.Markup) setTabEditMode(index, EditMode.Text)
+    if (mode == EditMode.Text) setTabEditMode(index, EditMode.Markup)
+  }
+
+  def setTabEditMode (index: Int, mode: EditMode): Unit = {
+    tabEditMode.insert(index, mode)
+
+    val editor = tabBox.pages(index).content.asInstanceOf[ScrollPane].
+      contents.head.asInstanceOf[EditorPane]
+    val entry = getEntryFromTabIndex(index)
+
+    if (entry.nonEmpty) {
+      var text = entry.get.body
+
+      if (mode == EditMode.Markup) {
+        editor.peer.setContentType("text/plain")
+        editor.peer.setEditable(true)
+        editor.text = text
+      } else {
+        editor.peer.setContentType("text/html")
+        editor.peer.setEditable(false)
+        editor.text = txtmark.Processor.process(text)
+      }
+    }
   }
 
   def closeTab(tabIndex: Int): Unit = {
@@ -324,6 +380,11 @@ object Main extends SimpleSwingApplication {
   def switchTab (dir: Int): Unit = {
     tabBox.peer.setSelectedIndex(tabBox.peer.getSelectedIndex %
       tabBox.peer.getTabCount)
+  }
+
+  def getEntryFromTabIndex (index: Int): Option[Entry] = {
+    val id = tabIndexToEntryId(index)
+    diary.getEntry(id)
   }
 
   // DIARY ENTRIES
@@ -352,6 +413,11 @@ object Main extends SimpleSwingApplication {
 
   def clickEntry(item: EntryListItem): Unit = {
     openEntry(item)
+  }
+
+  def rightClickEntry (item: EntryListItem, position: Point): Unit = {
+    entryRightClickDialog.open()
+    entryRightClickDialog.location = position
   }
 
   def createNewEntry (): Unit = {

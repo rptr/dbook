@@ -61,14 +61,20 @@ class Diary {
     println("TODO add new entry")
   }
 
-  def getEntry (id: Int): Option[DiaryItem] = {
-    _entries find (e => e.id == id)
+  def getEntry (id: Int): Option[Entry] = {
+    val item = _entries find (e => e.id == id)
+
+    item match {
+      case Some(e:Entry) => Some(e)
+      case _ => None
+    }
   }
+
 
   def saveEntry (entryId: Int, text: String): Unit = {
     var i = getEntry(entryId)
 
-    if (i.nonEmpty && i.get.isEntry) {
+    if (i.nonEmpty) {
       _entries.update(_entries.indexWhere(e => e.id == entryId),
         new Entry(i.get.id, "", i.get.timeCreated, text))
     }
